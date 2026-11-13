@@ -70,7 +70,13 @@ textarea.edit{width:100%;min-height:120px;font:inherit;font-size:18px;border:1px
 .end{text-align:center;margin-top:60px;font-family:var(--serif);font-size:22px;line-height:1.9;opacity:0;transition:opacity 2s}
 .end.in{opacity:1}
 .end small{display:block;font-family:var(--hand);font-size:13px;color:var(--muted);margin-top:22px}
-.views{text-align:center;margin-top:40px;font-size:12px;color:var(--muted);letter-spacing:.1em}
+#stats{position:fixed;inset:0;z-index:50;background:#0d0c0b;color:var(--cream);overflow:auto;padding:32px 18px;font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif}
+#stats h3{font-size:20px;margin-bottom:14px}
+#stats .sum{display:flex;gap:10px;margin-bottom:20px}
+#stats .sum div{flex:1;border:1px solid #3a342c;border-radius:10px;padding:12px;text-align:center}
+#stats .sum b{display:block;font-size:28px;color:var(--gold)}
+#stats li{list-style:none;border-bottom:1px solid #26221e;padding:8px 0;font-size:14px;display:flex;justify-content:space-between;gap:10px}
+#stats li span:last-child{color:var(--muted);font-size:12px}
 .replay{display:block;margin:28px auto 0;background:none;border:1px solid #3a342c;color:var(--muted);border-radius:999px;padding:6px 16px;font:inherit;font-size:13px}
 /* 新增留言 */
 .fab{position:fixed;z-index:10;right:20px;bottom:calc(22px + env(safe-area-inset-bottom));background:var(--pink);color:#2a2622;border:0;border-radius:999px;padding:14px 20px;font:inherit;font-size:16px;box-shadow:0 8px 20px #0009;opacity:0;transform:translateY(20px);transition:all .6s}
@@ -116,7 +122,6 @@ textarea.edit{width:100%;min-height:120px;font:inherit;font-size:18px;border:1px
   </div>
   <div id="feed"></div>
   <div class="end" id="end"></div>
-  <div class="views" id="views"></div>
   <button class="replay" id="replay">再看一次開場</button>
 </main>
 
@@ -176,7 +181,7 @@ const SEED = [
 // =======================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, doc, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, Timestamp, setDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, doc, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, Timestamp, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const $ = (id) => document.getElementById(id);
 const store = { get(k) { try { return localStorage.getItem(k) } catch { return null } }, set(k, v) { try { localStorage.setItem(k, v) } catch {} } };
@@ -257,18 +262,40 @@ async function playFilm() {
   await wait(skip ? 0 : 600);
   hide($("film")); openBoard();
 }
-// ---------- 點閱次數 ----------
-// 每次打開網頁記一次，並在留言板最下面顯示次數與最近一次打開的時間
-function trackViews() {
-  if (DEMO) { $("views").textContent = "（預覽模式不記錄點閱次數）"; return; }
-  const ref = doc(db, "stats", "main");
-  setDoc(ref, { views: increment(1), last: serverTimestamp() }, { merge: true }).catch(() => {});
-  onSnapshot(ref, (d) => {
-    const v = d.data(); if (!v) return;
-    $("views").textContent = `這個頁面被打開過 ${v.views} 次・最近一次 ${fmt(v.last)}`;
-  }, () => {});
+// ---------- 點閱紀錄（只有你看得到） ----------
+// 每次打開網頁記一筆：時間＋裝置（蘋果／三星／其他）。頁面上不會顯示。
+// 你自己要看：在網址後面加上 #c-stats-1205 打開，例如 https://…/happy-birthday-1205/#c-stats-1205
+const STATS_KEY = "#c-stats-1205";
+async function detectDevice() {
+  const ua = navigator.userAgent; let model = "";
+  try { if (navigator.userAgentData?.getHighEntropyValues) model = (await navigator.userAgentData.getHighEntropyValues(["model"])).model || ""; } catch {}
+  const brand = /iPhone|iPad|iPod|Macintosh/.test(ua) ? "蘋果"
+    : (/SamsungBrowser|SM-[A-Z0-9]+/.test(ua) || /^SM-/.test(model)) ? "三星"
+    : /Android/.test(ua) ? "其他 Android" : "電腦／其他";
+  const kind = /iPhone/.test(ua) ? "iPhone" : /iPad/.test(ua) ? "iPad" : /Macintosh/.test(ua) ? "Mac" : model || (/Android/.test(ua) ? "Android" : "Windows／其他");
+  return { brand, model: kind };
 }
-trackViews();
+async function trackViews() {
+  if (DEMO || location.hash === STATS_KEY) return;
+  try { const d = await detectDevice(); await addDoc(collection(db, "visits"), { ...d, at: serverTimestamp() }); } catch {}
+}
+function showStats() {
+  const box = document.createElement("div"); box.id = "stats";
+  box.innerHTML = "<h3>點閱紀錄</h3><div class='sum'></div><ul></ul><p style='color:var(--muted);font-size:12px;margin-top:16px'>只顯示最近 200 筆。三星手機如果用 Chrome 開也認得出來，用其他瀏覽器可能會變成「其他 Android」。</p>";
+  document.body.appendChild(box);
+  if (DEMO) { box.querySelector(".sum").textContent = "預覽模式不記錄，接上 Firebase 後才會有資料。"; return; }
+  onSnapshot(query(collection(db, "visits"), orderBy("at", "desc"), limit(200)), (snap) => {
+    const cnt = {}; const ul = box.querySelector("ul"); ul.innerHTML = "";
+    snap.forEach((d) => {
+      const v = d.data(); cnt[v.brand] = (cnt[v.brand] || 0) + 1;
+      const li = document.createElement("li"), a = document.createElement("span"), b = document.createElement("span");
+      a.textContent = `${v.brand}・${v.model}`; b.textContent = fmt(v.at); li.append(a, b); ul.appendChild(li);
+    });
+    const sum = box.querySelector(".sum"); sum.innerHTML = "";
+    [["總共", snap.size], ...Object.entries(cnt)].forEach(([k, n]) => { const d = document.createElement("div"); d.innerHTML = "<b></b><span></span>"; d.querySelector("b").textContent = n; d.querySelector("span").textContent = k; sum.appendChild(d); });
+  }, () => { box.querySelector(".sum").textContent = "讀不到資料，檢查一下 Firebase 規則。"; });
+}
+if (location.hash === STATS_KEY) setTimeout(showStats); else trackViews();
 function openBoard() { $("board").classList.add("on"); $("fab").classList.add("on"); scrollTo(0, 0); }
 $("replay").onclick = () => { $("board").classList.remove("on"); $("fab").classList.remove("on"); playFilm(); };
 
