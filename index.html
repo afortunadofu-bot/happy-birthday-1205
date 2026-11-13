@@ -26,7 +26,7 @@ body{background:radial-gradient(ellipse at 40% 20%,#1e1c1a,#0d0c0b 70%) fixed}
 @keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
 /* 3. 開場字幕 */
 #film{background:var(--bg);font-family:var(--serif);font-size:clamp(22px,6vw,30px);line-height:1.7}
-#film .line{opacity:0;transform:translateY(12px);transition:all 1.4s ease}
+#film .line{opacity:0;transform:translateY(12px);transition:all .8s ease}
 #film .line.on{opacity:1;transform:none}
 #film .skip{position:absolute;bottom:calc(24px + env(safe-area-inset-bottom));right:24px;font-family:var(--hand);font-size:13px;color:var(--muted);background:none;border:0}
 /* 4. 留言板 */
@@ -122,7 +122,7 @@ textarea.edit{width:100%;min-height:120px;font:inherit;font-size:18px;border:1px
   </div>
   <div id="feed"></div>
   <div class="end" id="end"></div>
-  <button class="replay" id="replay">再播一次給我看嘛 ♡</button>
+  <button class="replay" id="replay">倒帶，再看一次 ↺</button>
 </main>
 
 <button class="fab" id="fab">＋ 留言</button>
@@ -143,7 +143,7 @@ const firebaseConfig = {
 const ANNIVERSARY = "2026-05-01";          // 交往紀念日 YYYY-MM-DD，例如 "2025-05-01"；留空就不顯示天數
 const FILM = [                   // 開場字幕，一行一句
   "嗨，Ian。",
-  "今天是 12 月 5 日。",
+  "今天是 2026 年 12 月 5 日。",
   "生日快樂。",
   "慢慢往下滑。",
 ];
@@ -254,7 +254,7 @@ async function playFilm() {
     if (skip) break;
     const d = document.createElement("div"); d.className = "line"; d.textContent = t; box.appendChild(d);
     await wait(60); d.classList.add("on");
-    for (let i = 0; i < 26 && !skip; i++) await wait(100);
+    for (let i = 0; i < 13 && !skip; i++) await wait(100);
   }
   await wait(skip ? 0 : 600);
   hide($("film")); openBoard();
