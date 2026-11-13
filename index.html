@@ -122,7 +122,7 @@ textarea.edit{width:100%;min-height:120px;font:inherit;font-size:18px;border:1px
   </div>
   <div id="feed"></div>
   <div class="end" id="end"></div>
-  <button class="replay" id="replay">再看一次開場</button>
+  <button class="replay" id="replay">再播一次給我看嘛 ♡</button>
 </main>
 
 <button class="fab" id="fab">＋ 留言</button>
@@ -145,8 +145,6 @@ const FILM = [                   // 開場字幕，一行一句
   "嗨，Ian。",
   "今天是 12 月 5 日。",
   "生日快樂。",
-  "我把想跟你說的話，",
-  "都貼在這裡了。",
   "慢慢往下滑。",
 ];
 const ENDING = "謝謝你出現。\n謝謝你讓我覺得，\n自己是被好好對待的。\n\n生日快樂，Ian。";
@@ -158,7 +156,7 @@ const SEED = [
   { tag: "喜歡你的原因", text: "喜歡你的幽默，搞笑起來偶爾有點無厘頭。" },
   { tag: "喜歡你的原因", text: "你人很好。\n你對所有人都很好。" },
   { tag: "喜歡你的原因", text: "跟你在一起，很有安全感。" },
-  { tag: "喜歡你的原因", text: "你是會讓我願意為了你花 token 的人。" },
+  { tag: "喜歡你的原因", text: "我平常是很省 token 的人。\n\n可是只要是你的事，\n我願意一直問、一直改、一直重來，\n只為了讓你打開的時候多笑一下。\n\n你是會讓我願意為了你花 token 的人。" },
   { tag: "喜歡你的原因", text: "有時候心情不好，\n看到你的訊息，心就暖暖的。" },
   { tag: "你是這樣的人", text: "聰明、睿智、機智、有創意、有洞察力、有遠見，講話還會旁徵博引。" },
   { tag: "你是這樣的人", text: "善良、體貼、溫柔。朋友很多，局更多。" },
@@ -339,7 +337,6 @@ function render(snap) {
     if (++i % 4 === 0) { const g = document.createElement("div"); g.className = "inline-dog"; g.innerHTML = `<img src="stickers/s${String(dogOrder[(i / 4 - 1) % dogOrder.length]).padStart(2, "0")}.png" alt="" loading="lazy">`; feed.appendChild(g); }
   });
   $("end").innerHTML = ""; $("end").append(...ENDING.split("\n").flatMap((t, k, a) => k < a.length - 1 ? [t, document.createElement("br")] : [t]));
-  const sm = document.createElement("small"); sm.textContent = "右下角可以留言給對方，想到什麼都可以寫。"; $("end").appendChild(sm);
   io.observe($("end"));
 }
 
