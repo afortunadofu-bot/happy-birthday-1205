@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0d0c0b">
-<title>🎂 For Ian</title>
+<title>For Ian</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎂</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Serif+TC:wght@500;700&family=Cormorant+Garamond:ital,wght@0,500;1,500&display=swap" rel="stylesheet">
@@ -39,9 +39,7 @@ body{background:radial-gradient(ellipse at 40% 20%,#1e1c1a,#0d0c0b 70%) fixed}
 #film .line.on{opacity:1;transform:none}
 #film .skip{position:absolute;bottom:calc(24px + env(safe-area-inset-bottom));right:24px;font-family:var(--hand);font-size:13px;color:var(--muted);background:none;border:0}
 /* 4. 留言板 */
-main{position:relative;z-index:2;max-width:560px;margin:0 auto;padding:56px 18px 140px;opacity:0;transition:opacity 1.2s;display:flex;flex-direction:column}
-main .head{order:0}#postsSec{order:2}#cardsSec{order:1}
-main.later #postsSec{order:1}main.later #cardsSec{order:2}
+main{position:relative;z-index:2;max-width:560px;margin:0 auto;padding:56px 18px 140px;opacity:0;transition:opacity 1.2s}
 main.on{opacity:1}
 .head{text-align:center;margin-bottom:46px}
 .head .dog{width:120px;margin:0 auto 10px;animation:bob 2.6s ease-in-out infinite}
@@ -92,13 +90,10 @@ textarea.edit{width:100%;min-height:120px;font:inherit;font-size:18px;border:1px
 .sec-h h3{font-family:var(--serif);font-size:22px;color:var(--cream)}
 .sec-h div{font-family:"Cormorant Garamond",serif;letter-spacing:.3em;font-size:11px;color:var(--muted);margin-top:2px}
 #postsSec{margin-top:70px}
-main.later #postsSec{margin-top:10px}
-main.later #cardsSec{margin-top:70px}
-.filter{display:flex;justify-content:center;gap:8px;margin:-12px 0 26px}
+.filter{display:flex;justify-content:center;gap:8px;margin:-20px 0 34px}
 .filter button{background:none;border:1px solid #3a342c;color:var(--muted);border-radius:999px;padding:5px 14px;font:inherit;font-size:13px}
 .filter button.on{background:var(--cream);color:var(--ink);border-color:var(--cream)}
-#posts .note.ian{margin-left:26px}
-#posts .note.celine{margin-right:26px}
+.note.ian{margin-left:26px}
 .empty{text-align:center;color:var(--muted);font-size:14px;margin-bottom:20px}
 .replay{display:block;margin:28px auto 0;background:none;border:1px solid #3a342c;color:var(--muted);border-radius:999px;padding:6px 16px;font:inherit;font-size:13px}
 /* 新增留言 */
@@ -124,7 +119,7 @@ main.later #cardsSec{margin-top:70px}
   .note.s-big .body{font-size:17px}
   .facts b{font-size:22px}.facts .row{font-size:15px}
   .coupon .ticket b{font-size:24px}
-  #posts .note.ian{margin-left:18px}#posts .note.celine{margin-right:18px}
+  .note.ian{margin-left:18px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.note{opacity:1;transform:none}}
 </style>
@@ -160,14 +155,12 @@ main.later #cardsSec{margin-top:70px}
     <h2>Ian</h2>
     <div class="days" id="days"></div>
   </div>
-  <section id="cardsSec">
-    <div id="feed"></div>
-    <div class="end" id="end"></div>
-    <button class="replay" id="replay">倒帶，再看一次 ↺</button>
-  </section>
+  <div class="filter"><button data-f="" class="on">全部</button><button data-f="ian">Ian 寫的</button><button data-f="celine">Celine 寫的</button></div>
+  <div id="feed"></div>
+  <div class="end" id="end"></div>
+  <button class="replay" id="replay">倒帶，再看一次 ↺</button>
   <section id="postsSec">
-    <div class="sec-h"><h3>我們的留言板</h3><div>NOTES FOR EACH OTHER</div></div>
-    <div class="filter"><button data-f="" class="on">全部</button><button data-f="ian">Ian 寫的</button><button data-f="celine">Celine 寫的</button></div>
+    <div class="sec-h"><h3>生日之後</h3><div>AFTER 12.05</div></div>
     <div id="posts"></div>
   </section>
 </main>
@@ -385,23 +378,30 @@ let filter = "";
 document.querySelectorAll(".filter button").forEach(b => b.onclick = () => {
   filter = b.dataset.f; document.querySelectorAll(".filter button").forEach(x => x.classList.toggle("on", x === b)); tryRerender();
 });
-const isPost = (m) => m.tag === "留言" || m.tag === "兌換券";
+const BDAY_MS = new Date(BIRTHDAY_END).getTime();
+const atMs = (m) => m.at ? m.at.toDate().getTime() : Date.now();
+let scrolledToAfter = false;
 function render(snap) {
   if (editing) return;                    // 編輯中不要重畫，避免打字被洗掉
   const feed = $("feed"), posts = $("posts");
   const seen = new Set([...document.querySelectorAll(".note.in")].map(n => n.dataset.id));
   feed.innerHTML = ""; posts.innerHTML = ""; let i = 0;
-  const all = []; snap.forEach((d) => all.push(d));
-  const cards = all.filter(d => !isPost(d.data()));
-  const mine = all.filter(d => isPost(d.data()) && (!filter || d.data().who === filter)).reverse();   // 留言：新的在上面
-  if (!mine.length) posts.innerHTML = `<p class="empty">${filter ? "這邊還沒有留言" : "還沒有留言，按右下角寫第一則吧"}</p>`;
-  mine.forEach((d) => posts.appendChild(makeNote(d, seen, 0)));
-  cards.forEach((d) => {
+  const all = []; snap.forEach((d) => { const m = d.data(); if (!filter || m.who === filter) all.push(d); });
+  const before = all.filter(d => atMs(d.data()) < BDAY_MS), after = all.filter(d => atMs(d.data()) >= BDAY_MS);
+  const isCoupon = (d) => d.data().style === "coupon";
+  // 生日前：一般卡片照時間排，兌換券統一放最後（在「生日快樂」上面）
+  [...before.filter(d => !isCoupon(d)), ...before.filter(isCoupon)].forEach((d) => {
     feed.appendChild(makeNote(d, seen, i));
     if (++i % 4 === 0) { const g = document.createElement("div"); g.className = "inline-dog"; g.innerHTML = `<img src="stickers/s${String(dogOrder[(i / 4 - 1) % dogOrder.length]).padStart(2, "0")}.png" alt="" loading="lazy">`; feed.appendChild(g); }
   });
+  if (!before.length) feed.innerHTML = '<p class="empty">這邊還沒有留言</p>';
   $("end").innerHTML = ""; $("end").append(...ENDING.split("\n").flatMap((t, k, a) => k < a.length - 1 ? [t, document.createElement("br")] : [t]));
   io.observe($("end"));
+  // 生日之後：照時間排，最新的在最下面
+  $("postsSec").style.display = after.length || LATER ? "" : "none";
+  if (!after.length) posts.innerHTML = '<p class="empty">還沒有新的留言，按右下角寫一則吧</p>';
+  after.forEach((d, k) => posts.appendChild(makeNote(d, seen, k)));
+  if (LATER && !scrolledToAfter) { scrolledToAfter = true; setTimeout(() => $("postsSec").scrollIntoView({ behavior: "smooth" }), 600); }
 }
 function makeNote(d, seen, i) {
     const m = d.data(), el = document.createElement("article");
@@ -461,7 +461,7 @@ $("send").onclick = async (e) => {
     store.set("board-who", who);
     await api.add({ who, text: t, tag: kind ? "兌換券" : "留言", style: kind });
     $("text").value = ""; $("sheet").classList.remove("on"); hearts(e.clientX, e.clientY, 12);
-    setTimeout(() => $("postsSec").scrollIntoView({ behavior: "smooth" }), 400);
+    setTimeout(() => (LATER ? $("posts").lastElementChild : $("end")).scrollIntoView({ behavior: "smooth", block: "center" }), 400);
   } catch { alert("沒貼上去，再試一次"); }
   $("send").disabled = false;
 };
