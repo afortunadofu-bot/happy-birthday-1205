@@ -181,6 +181,7 @@ const firebaseConfig = {
   projectId: "happy-birthday-ian",
 };
 const BIRTHDAY_END = "2026-12-06T00:00:00+08:00";   // 這個時間之後，打開就直接進留言板（不播開場）
+const REVERSE_FROM = "2026-12-15T00:00:00+08:00";  // 這個時間之後，留言改成最新的在最上面
 const ANNIVERSARY = "2026-05-01";          // 交往紀念日 YYYY-MM-DD，例如 "2025-05-01"；留空就不顯示天數
 const FILM = [                   // 開場字幕，一行一句
   "嗨，Ian。",
@@ -188,6 +189,7 @@ const FILM = [                   // 開場字幕，一行一句
   "生日快樂。",
   "慢慢往下滑。",
 ];
+const ENDING_IAN = "這裡收著你寫給我的話。\n想到什麼，就寫下來吧，\n我都會看。";
 const ENDING = "謝謝你出現。\n謝謝你讓我覺得，\n自己是被好好對待的。\n\n生日快樂，Ian。";
 // 第一次進入留言板時，會自動貼上的內容（之後在網頁上可以直接編輯／刪除）
 const SEED = [
@@ -379,6 +381,7 @@ document.querySelectorAll(".filter button").forEach(b => b.onclick = () => {
   filter = b.dataset.f; document.querySelectorAll(".filter button").forEach(x => x.classList.toggle("on", x === b)); tryRerender();
 });
 const BDAY_MS = new Date(BIRTHDAY_END).getTime();
+const REVERSED = Date.now() >= new Date(REVERSE_FROM).getTime();
 const atMs = (m) => m.at ? m.at.toDate().getTime() : Date.now();
 let scrolledToAfter = false;
 function render(snap) {
@@ -395,13 +398,16 @@ function render(snap) {
     if (++i % 4 === 0) { const g = document.createElement("div"); g.className = "inline-dog"; g.innerHTML = `<img src="stickers/s${String(dogOrder[(i / 4 - 1) % dogOrder.length]).padStart(2, "0")}.png" alt="" loading="lazy">`; feed.appendChild(g); }
   });
   if (!before.length) feed.innerHTML = '<p class="empty">這邊還沒有留言</p>';
-  $("end").innerHTML = ""; $("end").append(...ENDING.split("\n").flatMap((t, k, a) => k < a.length - 1 ? [t, document.createElement("br")] : [t]));
+  const endText = filter === "ian" ? ENDING_IAN : ENDING;
+  $("end").innerHTML = ""; $("end").append(...endText.split("\n").flatMap((t, k, a) => k < a.length - 1 ? [t, document.createElement("br")] : [t]));
   io.observe($("end"));
   // 生日之後：照時間排，最新的在最下面
   $("postsSec").style.display = after.length || LATER ? "" : "none";
   if (!after.length) posts.innerHTML = '<p class="empty">還沒有新的留言，按右下角寫一則吧</p>';
+  // 12/15 以後：生日之後的留言搬到最上面，最新的在最上面
+  if (REVERSED) { after.reverse(); if ($("postsSec").nextElementSibling !== feed) feed.before($("postsSec")); $("postsSec").style.margin = "0 0 70px"; }
   after.forEach((d, k) => posts.appendChild(makeNote(d, seen, k)));
-  if (LATER && !scrolledToAfter) { scrolledToAfter = true; setTimeout(() => $("postsSec").scrollIntoView({ behavior: "smooth" }), 600); }
+  if (LATER && !REVERSED && !scrolledToAfter) { scrolledToAfter = true; setTimeout(() => $("postsSec").scrollIntoView({ behavior: "smooth" }), 600); }
 }
 function makeNote(d, seen, i) {
     const m = d.data(), el = document.createElement("article");
@@ -461,7 +467,7 @@ $("send").onclick = async (e) => {
     store.set("board-who", who);
     await api.add({ who, text: t, tag: kind ? "兌換券" : "留言", style: kind });
     $("text").value = ""; $("sheet").classList.remove("on"); hearts(e.clientX, e.clientY, 12);
-    setTimeout(() => (LATER ? $("posts").lastElementChild : $("end")).scrollIntoView({ behavior: "smooth", block: "center" }), 400);
+    setTimeout(() => (REVERSED ? $("posts").firstElementChild : LATER ? $("posts").lastElementChild : $("end")).scrollIntoView({ behavior: "smooth", block: "center" }), 400);
   } catch { alert("沒貼上去，再試一次"); }
   $("send").disabled = false;
 };
