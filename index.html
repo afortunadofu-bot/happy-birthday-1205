@@ -521,10 +521,9 @@ function listenWishes() {
       el.querySelector(".t").textContent = m.text;
       const meta = el.querySelector(".m");
       meta.textContent = `${m.who === "ian" ? "Ian" : "Celine"} 在 ${day(m.at)} 許願`;
-      if (m.done) { const ok = document.createElement("div"); ok.className = "ok"; ok.textContent = `✓ ${day(m.doneAt)} 一起實現了`; meta.appendChild(ok); }
+      if (m.done) { const ok = document.createElement("div"); ok.className = "ok"; ok.textContent = `✓ ${day(m.doneAt)} 一起實現了`; const u = document.createElement("div"); u.textContent = "點一下勾勾可以取消"; u.style.cssText = "font-size:11px;color:#b3a892"; meta.append(ok, u); }
       el.querySelector(".box").onclick = (e) => {
         if (!m.done) { hearts(e.clientX, e.clientY, 14); el.classList.add("pop"); }
-        else if (!confirm("要取消打勾嗎？")) return;
         wapi.toggle(d.id, !m.done);
       };
       el.querySelector(".x").onclick = () => confirm(`確定要刪掉「${m.text}」嗎？`) && wapi.del(d.id);
