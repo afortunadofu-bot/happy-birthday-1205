@@ -410,7 +410,7 @@ const io = new IntersectionObserver((es) => es.forEach(e => {
   e.target.classList.add("in"); io.unobserve(e.target);
   if (e.target.id === "end") { const r = e.target.getBoundingClientRect(); hearts(innerWidth / 2, r.top + 40, 16); }
 }), { threshold: .25 });
-const dogOrder = [14, 11, 2, 20, 8, 22, 1, 15, 12, 6, 4, 19];
+const dogOrder = [14, 27, 11, 33, 2, 40, 20, 29, 8, 45, 22, 36, 1, 31, 15, 43, 12, 25, 6, 38, 4, 47, 19, 34];
 let editing = null;
 
 let filter = "";
