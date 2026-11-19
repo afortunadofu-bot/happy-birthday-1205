@@ -95,6 +95,32 @@ textarea.edit{width:100%;min-height:120px;font:inherit;font-size:18px;border:1px
 .filter button.on{background:var(--cream);color:var(--ink);border-color:var(--cream)}
 .note.ian{margin-left:26px}
 .empty{text-align:center;color:var(--muted);font-size:14px;margin-bottom:20px}
+.tabs{display:flex;justify-content:center;margin:-22px auto 34px;background:#1b1917;border:1px solid #3a342c;border-radius:999px;padding:4px;width:max-content}
+.tabs button{background:none;border:0;color:var(--muted);font:inherit;font-size:15px;padding:8px 18px;border-radius:999px;transition:all .3s}
+.tabs button.on{background:var(--cream);color:var(--ink)}
+main.tab-wish .filter,main.tab-wish #feed,main.tab-wish #end,main.tab-wish .replay,main.tab-wish #postsSec{display:none!important}
+#wishSec{display:none}
+main.tab-wish #wishSec{display:block;animation:in .5s}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
+.wish-add{display:flex;gap:8px;margin-bottom:8px}
+.wish-add input{flex:1;min-width:0;background:#0f0e0d;border:1px solid #3a342c;border-radius:12px;color:var(--cream);font:inherit;font-size:16px;padding:12px}
+.wish-add button{background:var(--pink);color:var(--ink);border:0;border-radius:12px;padding:0 16px;font:inherit;font-size:15px}
+.wish-who{display:flex;gap:8px;justify-content:flex-end;margin-bottom:26px;font-size:13px;color:var(--muted);align-items:center}
+.wish-who button{background:none;border:1px solid #3a342c;color:var(--muted);border-radius:999px;padding:3px 12px;font:inherit;font-size:13px}
+.wish-who button.on{border-color:var(--cream);color:var(--cream)}
+.wish{display:flex;gap:14px;align-items:flex-start;background:var(--paper);color:var(--ink);border-radius:3px;padding:14px 14px 12px;margin-bottom:12px;box-shadow:0 6px 16px #0007;transform:rotate(var(--r,0deg));transition:opacity .4s}
+.wish .box{flex:none;width:28px;height:28px;border:2px solid var(--ink);border-radius:8px;display:grid;place-items:center;font-size:18px;line-height:1;background:none;color:var(--ink);cursor:pointer;margin-top:1px}
+.wish .txt{flex:1;min-width:0}
+.wish .t{font-size:18px;line-height:1.5;word-break:break-word}
+.wish .m{font-size:12px;color:#8f8473;margin-top:4px;line-height:1.6}
+.wish .m .ok{color:#6f8a76;font-weight:700}
+.wish .x{flex:none;background:none;border:0;color:#b3a892;font-size:18px;padding:0 2px;cursor:pointer}
+.wish.done{opacity:.72}
+.wish.done .t{text-decoration:line-through;text-decoration-color:#ec9c94;text-decoration-thickness:2px}
+.wish.done .box{background:#6f8a76;border-color:#6f8a76;color:#fff}
+.wish.pop{animation:pop .5s}
+.wish-h{font-size:13px;color:var(--muted);letter-spacing:.15em;margin:30px 0 12px;text-align:center}
+.wish-count{text-align:center;color:var(--gold);font-size:14px;margin:-14px 0 22px}
 .replay{display:block;margin:28px auto 0;background:none;border:1px solid #3a342c;color:var(--muted);border-radius:999px;padding:6px 16px;font:inherit;font-size:13px}
 /* 新增留言 */
 .fab{position:fixed;z-index:10;right:20px;bottom:calc(22px + env(safe-area-inset-bottom));background:var(--pink);color:#2a2622;border:0;border-radius:999px;padding:14px 20px;font:inherit;font-size:16px;box-shadow:0 8px 20px #0009;opacity:0;transform:translateY(20px);transition:all .6s}
@@ -114,6 +140,7 @@ textarea.edit{width:100%;min-height:120px;font:inherit;font-size:18px;border:1px
 .heart{position:fixed;z-index:40;pointer-events:none;font-size:22px;animation:fly 1.6s ease-out forwards}
 @keyframes fly{to{transform:translate(var(--dx),-180px) rotate(var(--rt));opacity:0}}
 @media (max-width:480px){
+  .wish .t{font-size:16px}
   .note{padding:18px 16px 13px}
   .note .body{font-size:16px;line-height:1.7}
   .note.s-big .body{font-size:17px}
@@ -155,6 +182,13 @@ textarea.edit{width:100%;min-height:120px;font:inherit;font-size:18px;border:1px
     <h2>Ian</h2>
     <div class="days" id="days"></div>
   </div>
+  <div class="tabs"><button data-t="board" class="on">留言板</button><button data-t="wish">想一起做的事</button></div>
+  <section id="wishSec">
+    <div class="wish-count" id="wishCount"></div>
+    <div class="wish-add"><input id="wishText" maxlength="100" placeholder="想跟你一起去／一起做⋯⋯" enterkeyhint="done"><button id="wishAdd">許願</button></div>
+    <div class="wish-who">我是 <button data-w="ian">Ian</button><button data-w="celine">Celine</button></div>
+    <div id="wishList"></div>
+  </section>
   <div class="filter"><button data-f="" class="on">全部</button><button data-f="ian">Ian 寫的</button><button data-f="celine">Celine 寫的</button></div>
   <div id="feed"></div>
   <div class="end" id="end"></div>
@@ -219,10 +253,12 @@ const SEED = [
   { tag: "沒說過的話", text: "最近好喜歡抱你、黏著你喔。\n希望你不要覺得我很煩，或是太閒。" },
   { tag: "抱抱兌換券", style: "coupon", text: "抱抱兌換券\n無限次・免預約・不會過期" },
 ];
+// 「想一起做的事」清單：第一次打開、清單是空的時候自動放進去
+const WISHES = ["看流星雨", "擎天崗", "去海邊", "看夕陽", "回宜蘭玩", "和平島", "看博恩", "晚上的成功湖", "穿情侶裝"];
 // =======================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, doc, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, Timestamp, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, doc, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, Timestamp, limit, deleteField } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const $ = (id) => document.getElementById(id);
 const store = { get(k) { try { return localStorage.getItem(k) } catch { return null } }, set(k, v) { try { localStorage.setItem(k, v) } catch {} } };
@@ -282,7 +318,7 @@ let col, lastSnap, who = store.get("board-who"), seeded = false;
 // 密碼：大小寫、空白都不影響（23 ian / 23IAN / 23ian 都可以）
 const norm = (v) => v.toLowerCase().replace(/\s+/g, "");
 const LATER = Date.now() >= new Date(BIRTHDAY_END).getTime();
-let started = false;
+let started = false, wishListening = false;
 function start(code, { auto = false, film = true } = {}) {
   if (!DEMO) col = collection(db, "boards", code, "messages");
   let first = true;
@@ -295,6 +331,7 @@ function start(code, { auto = false, film = true } = {}) {
       if (film) playFilm(); else openBoard();
     }
     lastSnap = snap; render(snap);
+    if (!wishListening) { wishListening = true; listenWishes(); }
   }, () => {
     if (auto) { store.set("board-code", ""); hide($("cover")); show($("gate")); $("msg").textContent = ""; return; }
     $("msg").textContent = "不對喔，再看一次獎狀"; $("msg").classList.add("err");
@@ -447,10 +484,74 @@ function startEdit(el, id, m) {
 }
 function tryRerender() { lastSnap && render(lastSnap); }
 
+// ---------- 想一起做的事 ----------
+document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x === b));
+  $("board").classList.toggle("tab-wish", b.dataset.t === "wish");
+  $("fab").style.display = b.dataset.t === "wish" ? "none" : "";
+});
+const wapi = {
+  listen: (ok) => onSnapshot(query(collection(db, "boards", col.parent.id, "wishes"), orderBy("at", "asc")), ok, () => {}),
+  add: (text) => addDoc(collection(db, "boards", col.parent.id, "wishes"), { who, text, at: serverTimestamp(), done: false }),
+  toggle: (id, done) => updateDoc(doc(db, "boards", col.parent.id, "wishes", id), done ? { done: true, doneAt: serverTimestamp() } : { done: false, doneAt: deleteField() }),
+  del: (id) => deleteDoc(doc(db, "boards", col.parent.id, "wishes", id)),
+};
+if (DEMO) { const W = { rows: [], f: null, emit() { const r = this.rows; setTimeout(() => this.f && this.f({ empty: !r.length, size: r.length, forEach: (cb) => r.forEach(x => cb({ id: x.id, data: () => x })) })); } };
+  Object.assign(wapi, {
+    listen: (ok) => { W.f = ok; W.emit(); },
+    add: async (text) => { W.rows.push({ id: "w" + Date.now() + Math.random(), who, text, at: T(Date.now()), done: false }); W.emit(); },
+    toggle: async (id, done) => { const r = W.rows.find(x => x.id === id); r.done = done; r.doneAt = done ? T(Date.now()) : undefined; W.emit(); },
+    del: async (id) => { W.rows = W.rows.filter(x => x.id !== id); W.emit(); },
+  });
+  W.rows = WISHES.map((t, k) => ({ id: "ws" + k, who: "celine", text: t, at: T(Date.now() - (WISHES.length - k) * 6e4), done: false }));
+}
+const day = (ts) => { if (!ts) return "剛剛"; const d = ts.toDate(); return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`; };
+function listenWishes() {
+  wapi.listen((snap) => {
+    const list = $("wishList"), todo = [], done = [];
+    snap.forEach((d) => (d.data().done ? done : todo).push(d));
+    done.sort((a, b) => (b.data().doneAt?.toDate() || 0) - (a.data().doneAt?.toDate() || 0));
+    $("wishCount").textContent = `已經一起完成 ${done.length} 件，還有 ${todo.length} 件等著我們`;
+    list.innerHTML = "";
+    const row = (d, k) => {
+      const m = d.data(), el = document.createElement("div");
+      el.className = "wish" + (m.done ? " done" : ""); el.style.setProperty("--r", `${((k * 37) % 5 - 2) * .4}deg`);
+      el.innerHTML = '<button class="box"></button><div class="txt"><div class="t"></div><div class="m"></div></div><button class="x" aria-label="刪除">×</button>';
+      el.querySelector(".box").textContent = m.done ? "✓" : "";
+      el.querySelector(".t").textContent = m.text;
+      const meta = el.querySelector(".m");
+      meta.textContent = `${m.who === "ian" ? "Ian" : "Celine"} 在 ${day(m.at)} 許願`;
+      if (m.done) { const ok = document.createElement("div"); ok.className = "ok"; ok.textContent = `✓ ${day(m.doneAt)} 一起實現了`; meta.appendChild(ok); }
+      el.querySelector(".box").onclick = (e) => {
+        if (!m.done) { hearts(e.clientX, e.clientY, 14); el.classList.add("pop"); }
+        else if (!confirm("要取消打勾嗎？")) return;
+        wapi.toggle(d.id, !m.done);
+      };
+      el.querySelector(".x").onclick = () => confirm(`確定要刪掉「${m.text}」嗎？`) && wapi.del(d.id);
+      return el;
+    };
+    todo.forEach((d, k) => list.appendChild(row(d, k)));
+    if (done.length) { const h = document.createElement("div"); h.className = "wish-h"; h.textContent = "— 已經一起做到的 —"; list.appendChild(h); done.forEach((d, k) => list.appendChild(row(d, k + 3))); }
+    if (!todo.length && !done.length) list.innerHTML = '<p class="empty">還沒有願望，寫一個吧</p>';
+  });
+}
+const wishWho = (w) => { who = w; store.set("board-who", w); document.querySelectorAll(".wish-who button").forEach(b => b.classList.toggle("on", b.dataset.w === w)); pick(w); };
+document.querySelectorAll(".wish-who button").forEach(b => b.onclick = () => wishWho(b.dataset.w));
+async function addWish() {
+  const t = $("wishText").value.trim(); if (!t) return;
+  if (!who) { const w = document.querySelector(".wish-who"); w.classList.add("shake"); setTimeout(() => w.classList.remove("shake"), 400); return; }
+  $("wishAdd").disabled = true;
+  try { await wapi.add(t); $("wishText").value = ""; const r = $("wishAdd").getBoundingClientRect(); hearts(r.left + r.width / 2, r.top, 10); }
+  catch { alert("沒有存到，再試一次"); }
+  $("wishAdd").disabled = false;
+}
+$("wishAdd").onclick = addWish;
+$("wishText").onkeydown = (e) => { if (e.key === "Enter") addWish(); };
+
 // ---------- 新增留言 ----------
 const pick = (w) => { who = w; document.querySelectorAll(".who-pick button").forEach(b => b.classList.toggle("on", b.dataset.w === w)); };
 document.querySelectorAll(".who-pick button").forEach(b => b.onclick = () => pick(b.dataset.w));
-if (who) pick(who);
+if (who) { pick(who); document.querySelectorAll(".wish-who button").forEach(b => b.classList.toggle("on", b.dataset.w === who)); }
 let kind = "";
 document.querySelectorAll(".kind-pick button").forEach(b => b.onclick = () => {
   kind = b.dataset.k; document.querySelectorAll(".kind-pick button").forEach(x => x.classList.toggle("on", x === b));
