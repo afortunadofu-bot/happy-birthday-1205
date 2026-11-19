@@ -341,7 +341,7 @@ function start(code, { auto = false, film = true } = {}) {
 const tryCode = () => { const c = norm($("code").value); if (c) start(c); };
 $("go").onclick = tryCode;
 $("code").onkeydown = (e) => { if (e.key === "Enter") tryCode(); };
-const savedCode = store.get("board-code");
+const savedCode = "";  // 每次都要輸入密碼
 $("cover").onclick = (e) => {
   hearts(e.clientX, e.clientY, 12); hide($("cover"));
   if (savedCode) start(savedCode, { auto: true });
@@ -511,7 +511,7 @@ function listenWishes() {
     const list = $("wishList"), todo = [], done = [];
     snap.forEach((d) => (d.data().done ? done : todo).push(d));
     done.sort((a, b) => (b.data().doneAt?.toDate() || 0) - (a.data().doneAt?.toDate() || 0));
-    $("wishCount").textContent = `已經一起完成 ${done.length} 件，還有 ${todo.length} 件等著我們`;
+    $("wishCount").textContent = done.length ? `做到 ${done.length} 件了，還有 ${todo.length} 件` : `還有 ${todo.length} 件想一起做`;
     list.innerHTML = "";
     const row = (d, k) => {
       const m = d.data(), el = document.createElement("div");
